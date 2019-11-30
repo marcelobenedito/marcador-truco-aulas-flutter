@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:marcador_truco/views/home_page.dart';
+import 'package:screen/screen.dart';
 
 void main() {
   runApp(MaterialApp(
@@ -8,4 +9,5 @@ void main() {
     theme: ThemeData(primarySwatch: Colors.blue),
     home: HomePage(),
   ));
+  Screen.keepOn(true);
 }

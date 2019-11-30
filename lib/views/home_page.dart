@@ -10,6 +10,8 @@ class _HomePageState extends State<HomePage> {
   var _playerOne = Player(name: "Nós", score: 0, victories: 0);
   var _playerTwo = Player(name: "Eles", score: 0, victories: 0);
 
+  TextEditingController _playerNameController = TextEditingController();
+
   @override
   void initState() {
     super.initState();
@@ -32,21 +34,33 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomPadding: false,
       appBar: AppBar(
         backgroundColor: Colors.deepOrange,
         title: Text("Marcador Pontos (Truco!)"),
         actions: <Widget>[
-          IconButton(
-            onPressed: () {
+          GestureDetector(
+            onLongPress: () {
               _showDialog(
-                  title: 'Zerar',
-                  message:
-                      'Tem certeza que deseja começar novamente a pontuação?',
-                  confirm: () {
-                    _resetPlayers();
-                  });
+                title: 'Reiniciar',
+                message:
+                    'Tem certeza que deseja reiniciar partida sem zerar as vitórias?',
+                confirm: () {
+                  _resetPlayers(resetVictories: false);
+              });
             },
-            icon: Icon(Icons.refresh),
+            child: IconButton(
+              onPressed: () {
+                _showDialog(
+                    title: 'Zerar',
+                    message:
+                        'Tem certeza que deseja começar novamente a pontuação?',
+                    confirm: () {
+                      _resetPlayers();
+                    });
+              },
+              icon: Icon(Icons.refresh),
+            )
           )
         ],
       ),
@@ -73,7 +87,21 @@ class _HomePageState extends State<HomePage> {
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: <Widget>[
-          _showPlayerName(player.name),
+        GestureDetector(
+          onTap: () {
+            _showDialogWithInputText(
+              title: 'Trocar nome',
+              textFieldController: _playerNameController,
+              confirm: () {
+                setState(() {
+                 player.name =  _playerNameController.text.trim().isNotEmpty ? _playerNameController.text.trim() : player.name;
+                 _playerNameController.text = "";
+                });
+              }
+            );
+          },
+          child: _showPlayerName(player.name)
+        ),
           _showPlayerScore(player.score),
           _showPlayerVictories(player.victories),
           _showScoreButtons(player),
@@ -84,12 +112,12 @@ class _HomePageState extends State<HomePage> {
 
   Widget _showPlayerName(String name) {
     return Text(
-      name.toUpperCase(),
-      style: TextStyle(
-          fontSize: 22.0,
-          fontWeight: FontWeight.w500,
-          color: Colors.deepOrange),
-    );
+        name.toUpperCase(),
+        style: TextStyle(
+            fontSize: 22.0,
+            fontWeight: FontWeight.w500,
+            color: Colors.deepOrange),
+      );
   }
 
   Widget _showPlayerVictories(int victories) {
@@ -138,7 +166,9 @@ class _HomePageState extends State<HomePage> {
           color: Colors.black.withOpacity(0.1),
           onTap: () {
             setState(() {
-              player.score--;
+              if (player.score > 0) {
+                player.score--;
+              }
             });
           },
         ),
@@ -147,7 +177,9 @@ class _HomePageState extends State<HomePage> {
           color: Colors.deepOrangeAccent,
           onTap: () {
             setState(() {
-              player.score++;
+              if (player.score < 12) {
+                player.score++;
+              }
             });
 
             if (player.score == 12) {
@@ -165,7 +197,15 @@ class _HomePageState extends State<HomePage> {
                     setState(() {
                       player.score--;
                     });
-                  });
+              });
+            }
+            if (_playerOne.score == 11 && _playerTwo.score == 11) {
+                _showDialog(
+                  title: 'Mão de Ferro!',
+                  message: 'É a Mão de Onze especial, quando as duas duplas conseguem chegar a 11 pontos na '
+                    + 'partida. Todos os jogadores recebem as cartas “cobertas”, isto é, viradas para baixo, '
+                    + 'e deverão jogar assim. Quem vencer a mão, vence a partida.',
+              );
             }
           },
         ),
@@ -177,6 +217,7 @@ class _HomePageState extends State<HomePage> {
       {String title, String message, Function confirm, Function cancel}) {
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (BuildContext context) {
         return AlertDialog(
           title: Text(title),
@@ -189,6 +230,32 @@ class _HomePageState extends State<HomePage> {
                 if (cancel != null) cancel();
               },
             ),
+            FlatButton(
+              child: Text("OK"),
+              onPressed: () {
+                Navigator.of(context).pop();
+                if (confirm != null) confirm();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showDialogWithInputText(
+      {String title, Function confirm, TextEditingController textFieldController}) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(title),
+            content: TextField(
+              controller: textFieldController,
+              decoration: InputDecoration(hintText: "Informe o nome"),
+            ),
+          actions: <Widget>[
             FlatButton(
               child: Text("OK"),
               onPressed: () {
